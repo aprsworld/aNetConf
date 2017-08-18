@@ -1,0 +1,545 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>aNetConf</title>
+
+		<!-- purecss simple css -->
+		<link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css">
+		<link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/grids-responsive-min.css">
+
+		<!-- FormValidation CSS file -->
+		<link rel="stylesheet" href="res/formvalidation/css/formValidation.min.css">
+
+		<!-- jquery -->
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+		<!-- FormValidation plugin and the class supports validating Pure form -->
+		<script src="res/formvalidation/js/formValidation.min.js"></script>
+		<script src="res/formvalidation/js/framework/pure.min.js"></script>
+
+		<!-- font awesome with info@aprsworld.com key -->
+		<script src="https://use.fontawesome.com/269a99f1b2.js"></script>
+
+	
+		
+		<style>
+.right {
+	text-align: right;
+}
+
+.debug {
+	/* turned on with a URL parameter of debug=1 */
+	color: red;
+}
+
+.edit {
+	/* turned on with a URL parameter of edit=1 or by clicking edit button */
+	visibility: none;
+}
+
+button {
+	margin: 10px;
+}
+
+/* purecss border and padding */
+.pure-g > div {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+.l-box {
+	padding: 1em;
+}
+.pure-control-group {
+	font-weight: bold;
+}
+		</style>
+	</head>
+	<body>
+
+<script type="text/JavaScript">
+var dataURL="/anetconf/back/net.json";
+var wirelessScanURL="http://192.168.10.189:2001/anetconf-wpaSupplicantScan.php";
+var debug=false;
+
+/* don't cache ajax data */
+$.ajaxSetup({ cache: false }); 
+
+function fillFormTextField(form,field,value) {
+	if ( value === undefined ) {
+		console.log("# fillFormTextField form=" + form + " field=" + field + " value=" + value + "    undefined, aborting");
+		return;
+	}
+
+	$('#' + field).val(value);
+	/* revalidate form field */
+      	$('#' + form).formValidation('revalidateField',field);
+}
+
+function loadNewData(){
+	$.getJSON(dataURL, 
+		function(data) {
+			hideWarn();
+			
+			console.log('# received the following data:');
+			console.log(data);
+
+			/* eth0 interface */
+			if ( data.net.interface.eth0 !== undefined ) {
+				/* set the mode radio buttons initially to disabled, then change to appropriate if we have it*/
+				$('#eth0_mode_static').prop('checked',false);
+				$('#eth0_mode_dhcp').prop('checked',false);
+				$('#eth0_mode_disabled').prop('checked',true);
+				formSectionNetworkMode('eth0_static','disabled');
+				if ( undefined !== data.net.interface.eth0.mode ) {
+					if ( 'static' == data.net.interface.eth0.mode ) {
+						$('#eth0_mode_static').prop('checked',true);
+						formSectionNetworkMode('eth0_static',true);
+					} else if ( 'dhcp' == data.net.interface.eth0.mode ) {
+						$('#eth0_mode_dhcp').prop('checked',true);
+					}
+				}
+
+				fillFormTextField('networkConfiguration','eth0_ip',data.net.interface.eth0.ip);
+				fillFormTextField('networkConfiguration','eth0_netmask',data.net.interface.eth0.netmask);
+				fillFormTextField('networkConfiguration','eth0_gateway',data.net.interface.eth0.gateway);
+				fillFormTextField('networkConfiguration','eth0_nameserver_primary',data.net.interface.eth0.nameserver[0]);
+				fillFormTextField('networkConfiguration','eth0_nameserver_secondary',data.net.interface.eth0.nameserver[1]);
+			}
+
+			/* wlan0 interface */
+
+		}
+	); 
+}
+
+function loadScanData(){
+	$.getJSON(wirelessScanURL, 
+		function(data) {
+			$("#scan_happening").hide();
+			$("#scan_results").show();
+
+			console.log('# loadScanData() received the following data:');
+			console.log(data);
+
+			var tbody = $('#scan_results_table').children('tbody');
+
+			/* remove change event handler */
+			$('input[type=radio][name=wlan0_ssid]').unbind();
+
+			for ( var i=0 ; i<data.length ; i++ ) {
+				var rowCode='<tr>';
+				rowCode += '<td><input type="radio" name="wlan0_ssid" value="' + data[i].ssid + '" /></td>';
+				rowCode += '<td>' + data[i].ssid + '</td>';
+				rowCode += '<td>' + data[i].signal + ' dBm</td>';
+				rowCode += '<td>' + data[i].security + '</td>';
+				rowCode += '<td>' + data[i].nAccessPoints + '</td>';
+				rowCode += '</tr>';
+
+				tbody.append(rowCode);
+			}
+
+			/* disable #wlan0_manual_ssid text box unless radio button next to it is selected */
+			$('input[type=radio][name=wlan0_ssid]').change(function() { 
+				if ( 'wlan0_manual_ssid' == this.value ) {
+//					console.log('# undisabling text input box');
+					$('#wlan0_manual_ssid').prop('disabled',false);
+//					$('#networkConfiguration').formValidation('enableFieldValidators','wlan0_manual_ssid',true,'callback');
+				} else {
+//					console.log('# disabling text input box');
+					$('#wlan0_manual_ssid').prop('disabled',true);
+//					$('#networkConfiguration').formValidation('enableFieldValidators','wlan0_manual_ssid',false,'callback');
+//					$('#networkConfiguration').formValidation('disableSubmitButtons','false');
+				}
+
+				console.log('# wlan0_ssid this.value=' + this.value);
+			});
+
+		}
+	); 
+}
+
+function hideWarn(){
+	$("#connection_warn").hide();
+}
+
+$(document).ready(function(){
+	/* put URL parameters into $.urlParam */
+	$.urlParam = function(name){
+		var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+		if ( results==null ) {
+			return null;
+		} else {
+			return results[1] || 0;
+		}
+	}
+
+
+	/* process URL parameters */
+	if ( $.urlParam('dataURL') !== null && $.urlParam('dataURL').length ) {
+		dataURL=$.urlParam('dataURL');
+		console.log('# dataURL: ' + dataURL + ' (as specified from URL parameter)');
+	}
+
+	if ( $.urlParam('debug') !== null && $.urlParam('debug').length && "1"===$.urlParam('debug') ) {
+		debug=true;
+		console.log('# debug: ' + debug + ' (as specified from URL parameter)');
+	} else {
+		/* add CSS element for display: none to debug CSS */
+		$("head").append('<style type="text/css"></style>');
+		var newStyleElement = $("head").children(':last');
+		newStyleElement.html('.debug { display: none; }');
+	}
+
+	/* setup AJAX data source */
+	$( document ).ajaxError(function(event){
+		console.log("no response from JSON server");
+		$("#connection_warn").show();
+		$("#connection_warn").append(event);
+	});
+
+	
+
+	/* form validator hook */
+        $('#networkConfiguration').formValidation({
+		framework: 'pure',
+
+		icon: {
+			valid: 'fa fa-check',
+			invalid: 'fa fa-times',
+			validating: 'fa fa-refresh'
+		},
+
+		fields: {
+			eth0_ip: {
+				validators: {
+					notEmpty: {
+						message: 'IP address is required.'
+					},
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'Valid IP address required'
+					}
+				}
+			},
+			eth0_netmask: {
+				validators: {
+					notEmpty: {
+						message: 'Subnet mask is required.'
+					},
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'Valid subnet mask required'
+					}
+				}
+			},
+			eth0_gateway: {
+				validators: {
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'If gateway IP address is specified, it must be a valid IP address.'
+					}
+				}
+			},
+			eth0_nameserver_primary: {
+				validators: {
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'If primary DNS server IP address is specified, it must be a valid IP address.'
+					}
+				}
+			},
+			eth0_nameserver_secondary: {
+				validators: {
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'If secondary DNS server IP address is specified, it must be a valid IP address.'
+					}
+				}
+			},
+			/* wlan0 */
+			wlan0_ssid: {
+			//wlan0_manual_ssid: {
+				validators: {
+					callback: {
+						callback: function(value, validator, $field) {
+							console.log('# wlan0_manual_ssid callback value=' + value + ' validator=' + validator + ' field=' + $field + '');
+							
+							/* if 'wlan0_ssid_manual' != wlan0_ssid, then return true because we don't care if it is valid */
+							console.log('# ssid is ' + $('input[name=wlan0_ssid]:checked', '#networkConfiguration').val());
+
+							if ( 'wlan0_manual_ssid' !==  $('input[name=wlan0_ssid]:checked', '#networkConfiguration').val() ) {
+								return true;
+							}
+							
+							if ( value.length < 1 || value.length > 32 ) {
+								return {
+									valid: false,
+									message: 'SSID must be 1 to 32 characters'
+								}
+							}
+
+							
+							return true;
+						}
+					}
+				}
+			},
+			wlan0_ip: {
+				validators: {
+					notEmpty: {
+						message: 'IP address is required.'
+					},
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'Valid IP address required'
+					}
+				}
+			},
+			wlan0_netmask: {
+				validators: {
+					notEmpty: {
+						message: 'Subnet mask is required.'
+					},
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'Valid subnet mask required'
+					}
+				}
+			},
+			wlan0_gateway: {
+				validators: {
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'If gateway IP address is specified, it must be a valid IP address.'
+					}
+				}
+			},
+			wlan0_nameserver_primary: {
+				validators: {
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'If primary DNS server IP address is specified, it must be a valid IP address.'
+					}
+				}
+			},
+			wlan0_nameserver_secondary: {
+				validators: {
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'If secondary DNS server IP address is specified, it must be a valid IP address.'
+					}
+				}
+			}
+		}
+	});
+
+	/* set initial form state */
+	formSectionNetworkMode('eth0_static',$('[name=eth0_mode]:checked').val());
+	/* any future changes */
+	$('input[type=radio][name=eth0_mode]').change(function() { formSectionNetworkMode('eth0_static',this.value); });
+
+
+	/* clear form and reload initial values from system */
+	$('.button-revert').click( function() {
+		console.log("# button-revert clicked");
+
+		/* clear text fields */
+		$(this).closest('form').find("input[type=text]").val("")
+
+		loadNewData();
+	});
+
+	/* scan button */
+	$('.button-scan').click( function() {
+		console.log("# button-scan clicked");
+
+		/* empty the table besides the first row */
+		$("#scan_results_table").children('tbody').find("tr:gt(0)").remove();
+		$("#scan_happening").show();
+		loadScanData();
+	});
+
+	/* load the values from the system */
+	loadNewData();
+});
+
+function formSectionNetworkMode(section,value) {
+	if ( value == 'dhcp' || value == 'disabled' ) {
+		formSectionDisable(section,true);
+	} else {
+		formSectionDisable(section,false);
+	}
+}
+
+function formSectionDisable(section,value) {
+	if ( value ) {
+		$('#' + section + ' input').prop('disabled',true);
+	} else {
+		$('#' + section + ' input').prop('disabled',false);
+	}
+}
+
+</script>
+
+
+<div class="pure-g" style="margin-left: 20px; margin-right: 20px;">
+<div class="pure-u-1-1">
+<h1>Network Configuration</h1>
+
+<!-- connection warning message -->
+<div id="connection_warn" style="text-align: center; width: 800px; padding: 10px; margin-right: auto; margin-left: auto; background-color: orange; color: white; display: none;" onclick="hideWarn()">
+	<h1>No Response From Server. Please check to make sure you are still connected to the Internet and have a valid data URL.</h1>
+</div>
+
+
+<form class="pure-form pure-form-aligned" id="networkConfiguration" method="post" action="/anetconf/">
+	<fieldset>
+		<legend style="font-size: 2em; font-weight: bold;">Wired Ethernet</legend>
+
+		<div class="pure-control-group">
+			<label for="eth0_mode">Configuration Method</label>
+			<label for="eth0_mode_dhcp" class="pure-radio"><input id="eth0_mode_dhcp" type="radio" name="eth0_mode" value="dhcp" /> DHCP</label>
+			<label for="eth0_mode_static" class="pure-radio"><input id="eth0_mode_static" type="radio" name="eth0_mode" value="static" /> Static</label>
+			<label for="eth0_mode_disabled" class="pure-radio"><input id="eth0_mode_disabled" type="radio" name="eth0_mode" value="disabled" /> Disabled</label>
+			<br />
+			<span class="pure-form-message-inline">Most networks provide a DHCP server which will automatically get your device on the network. If unsure, use DHCP for configuration method.</span>
+		</div>
+
+		<div id="eth0_static">
+			<div class="pure-control-group">
+				<label for="eth0_ip">IP address</label>
+				<input name="eth0_ip" id="eth0_ip" type="text" />
+			</div>
+	
+			<div class="pure-control-group">
+				<label for="eth0_netmask">Subnet Mask</label>
+				<input name="eth0_netmask" id="eth0_netmask" type="text" />
+			</div>
+
+			<div class="pure-control-group">
+				<label for="eth0_gateway">Gateway</label>
+				<input name="eth0_gateway" id="eth0_gateway" type="text" />
+			</div>
+
+			<div class="pure-control-group">
+				<label for="eth0_nameserver_primary">Primary DNS</label>
+				<input name="eth0_nameserver_primary" id="eth0_nameserver_primary" />
+				<span class="pure-form-message-inline">Consider using <a href="https://developers.google.com/speed/public-dns/">Google Public DNS</a> server <i>8.8.8.8</i>.</span>
+			</div>
+
+			<div class="pure-control-group">
+				<label for="eth0_nameserver_secondary">Secondary DNS<span class="pure-form-message-inline">(optional)</span></label>
+				<input name="eth0_nameserver_secondary" id="eth0_nameserver_secondary" type="text" />
+				<span class="pure-form-message-inline">Consider using <a href="https://developers.google.com/speed/public-dns/">Google Public DNS</a> server <i>8.8.4.4</i>.</span>
+			</div>
+		</div>
+	</fieldset>
+	<fieldset>
+		<legend style="font-size: 2em; font-weight: bold;">Wireless Ethernet</legend>
+		<div class="pure-control-group">
+			<label for="wlan0_ssid">Wireless SSID</label>
+
+			<span class="pure-form-message-inline">
+				<div id="scan_happening" style="text-align: center; padding: 10px; margin-right: auto; margin-left: auto; background-color: orange; color: white; display: none; ">
+					<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>
+					Currently scanning for available wireless networks. Please wait.
+				</div>
+	
+				<div id="scan_results" style="display: none;">
+					<table id="scan_results_table" class="pure-table pure-table-horizontal pure-table-striped">
+						<thead>
+							<tr>
+								<th>Use?</th>
+								<th>SSID</th>
+								<th>Signal Strength</th>
+								<th>Security</th>
+								<th># of AP</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><input type="radio" name="wlan0_ssid" value="wlan0_manual_ssid" id="radio_wlan0_manual_ssid" /></td>
+								<td><input name="wlan0_manual_ssid" type="text" id="wlan0_manual_ssid" placeholder="SSID (manual entry)" disabled /></td>
+								<td></td>
+								<td></td>
+								<td></td>
+							</tr>
+						<!-- will insert data automatically here -->
+						</tbody>
+					</table>
+				</div>
+		
+				<button type="button" class="pure-button pure-button-primary button-scan">Scan for Available Wireless Networks</button>
+			</span>
+		</div>
+
+		<div class="pure-control-group">
+			<label for="wlan0_mode">Configuration Method</label>
+			<label for="wlan0_mode_dhcp" class="pure-radio"><input id="wlan0_mode_dhcp" type="radio" name="wlan0_mode" value="dhcp" /> DHCP</label>
+			<label for="wlan0_mode_static" class="pure-radio"><input id="wlan0_mode_static" type="radio" name="wlan0_mode" value="static" /> Static</label>
+			<label for="wlan0_mode_disabled" class="pure-radio"><input id="wlan0_mode_disabled" type="radio" name="wlan0_mode" value="disabled" /> Disabled</label>
+			<br />
+			<span class="pure-form-message-inline">Most networks provide a DHCP server which will automatically get your device on the network. If unsure, use DHCP for configuration method.</span>
+		</div>
+
+		<div id="wlan0_static">
+			<div class="pure-control-group">
+				<label for="wlan0_ip">IP address</label>
+				<input name="wlan0_ip" id="wlan0_ip" type="text" />
+			</div>
+	
+			<div class="pure-control-group">
+				<label for="wlan0_netmask">Subnet Mask</label>
+				<input name="wlan0_netmask" id="wlan0_netmask" type="text" />
+			</div>
+
+			<div class="pure-control-group">
+				<label for="wlan0_gateway">Gateway</label>
+				<input name="wlan0_gateway" id="wlan0_gateway" type="text" />
+			</div>
+
+			<div class="pure-control-group">
+				<label for="wlan0_nameserver_primary">Primary DNS</label>
+				<input name="wlan0_nameserver_primary" id="wlan0_nameserver_primary" />
+				<span class="pure-form-message-inline">Consider using <a href="https://developers.google.com/speed/public-dns/">Google Public DNS</a> server <i>8.8.8.8</i>.</span>
+			</div>
+
+			<div class="pure-control-group">
+				<label for="wlan0_nameserver_secondary">Secondary DNS<span class="pure-form-message-inline">(optional)</span></label>
+				<input name="wlan0_nameserver_secondary" id="wlan0_nameserver_secondary" type="text" />
+				<span class="pure-form-message-inline">Consider using <a href="https://developers.google.com/speed/public-dns/">Google Public DNS</a> server <i>8.8.4.4</i>.</span>
+			</div>
+		</div>
+	</fieldset>
+
+	<fieldset>
+		<legend style="font-size: 2em; font-weight: bold;">Actions</legend>
+		<div class="pure-controls">
+			<button type="submit" class="pure-button pure-button-primary">Save Changes and Reboot</button>
+			<span class="pure-form-message-inline">Click the "Save Changes and Reboot" button to apply your changes.</span>
+		</div>
+		<div class="pure-controls">
+			<button type="button" class="pure-button pure-button-primary button-revert">Revert</button>
+			<span class="pure-form-message-inline">Click the "Revert" button to reload the current settings from the device.</span>
+		</div>
+	</fieldset>
+</form>
+
+
+
+</div>
+</div>
+</body>
+</html>
