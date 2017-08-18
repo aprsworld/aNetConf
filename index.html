@@ -406,7 +406,7 @@ function formSectionDisable(section,value) {
 
 <form class="pure-form pure-form-aligned" id="networkConfiguration" method="post" action="/anetconf/">
 	<fieldset>
-		<legend style="font-size: 2em; font-weight: bold;">Wired Ethernet</legend>
+		<legend style="font-size: 2em; font-weight: bold;"><i class="fa fa-sitemap" aria-hidden="true"></i> Wired Ethernet</legend>
 
 		<div class="pure-control-group">
 			<label for="eth0_mode">Configuration Method</label>
@@ -447,7 +447,29 @@ function formSectionDisable(section,value) {
 		</div>
 	</fieldset>
 	<fieldset>
-		<legend style="font-size: 2em; font-weight: bold;">Wireless Ethernet</legend>
+		<legend style="font-size: 2em; font-weight: bold;"><i class="fa fa-wifi" aria-hidden="true"></i> Wireless Ethernet</legend>
+
+		<div class="pure-control-group">
+			<label for="wlan0_mode">Interface Mode</label>
+			<label for="wlan0_mode_ap" class="pure-radio"><input id="wlan0_mode_ap" type="radio" name="wlan0_mode" value="ap" /> Wireless Access Point for stand-alone network</label>
+			<label for="wlan0_mode_dhcp" class="pure-radio"><input id="wlan0_mode_dhcp" type="radio" name="wlan0_mode" value="client" /> Client for existing wireless network</label>
+			<label for="wlan0_mode_disabled" class="pure-radio"><input id="wlan0_mode_disabled" type="radio" name="wlan0_mode" value="disabled" /> Disabled</label>
+			<br />
+			<span class="pure-form-message-inline">
+Wireless Access Point mode allows wireless devices to connect to this device. Client mode is used to connect to an existing wireless network.</span>
+		</div>
+
+		<div class="pure-control-group">
+			<label for="wlan0_mode">Configuration Method</label>
+			<label for="wlan0_mode_dhcp" class="pure-radio"><input id="wlan0_mode_dhcp" type="radio" name="wlan0_mode" value="dhcp" /> DHCP</label>
+			<label for="wlan0_mode_static" class="pure-radio"><input id="wlan0_mode_static" type="radio" name="wlan0_mode" value="static" /> Static</label>
+			<br />
+			<span class="pure-form-message-inline">
+Wireless Access Point / Stand-alone mode allows wireless devices to connect to this device. DHCP and Static 
+
+Most networks provide a DHCP server which will automatically get your device on the network. If unsure, use DHCP for configuration method.</span>
+		</div>
+
 		<div class="pure-control-group">
 			<label for="wlan0_ssid">Wireless SSID</label>
 
@@ -485,15 +507,6 @@ function formSectionDisable(section,value) {
 			</span>
 		</div>
 
-		<div class="pure-control-group">
-			<label for="wlan0_mode">Configuration Method</label>
-			<label for="wlan0_mode_dhcp" class="pure-radio"><input id="wlan0_mode_dhcp" type="radio" name="wlan0_mode" value="dhcp" /> DHCP</label>
-			<label for="wlan0_mode_static" class="pure-radio"><input id="wlan0_mode_static" type="radio" name="wlan0_mode" value="static" /> Static</label>
-			<label for="wlan0_mode_disabled" class="pure-radio"><input id="wlan0_mode_disabled" type="radio" name="wlan0_mode" value="disabled" /> Disabled</label>
-			<br />
-			<span class="pure-form-message-inline">Most networks provide a DHCP server which will automatically get your device on the network. If unsure, use DHCP for configuration method.</span>
-		</div>
-
 		<div id="wlan0_static">
 			<div class="pure-control-group">
 				<label for="wlan0_ip">IP address</label>
@@ -527,11 +540,11 @@ function formSectionDisable(section,value) {
 	<fieldset>
 		<legend style="font-size: 2em; font-weight: bold;">Actions</legend>
 		<div class="pure-controls">
-			<button type="submit" class="pure-button pure-button-primary">Save Changes and Reboot</button>
+			<button type="submit" class="pure-button pure-button-primary"><i class="fa fa-floppy-o" aria-hidden="true"></i>  Save Changes and Reboot</button>
 			<span class="pure-form-message-inline">Click the "Save Changes and Reboot" button to apply your changes.</span>
 		</div>
 		<div class="pure-controls">
-			<button type="button" class="pure-button pure-button-primary button-revert">Revert</button>
+			<button type="button" class="pure-button pure-button-primary button-revert"><i class="fa fa-undo" aria-hidden="true"></i>  Revert</button>
 			<span class="pure-form-message-inline">Click the "Revert" button to reload the current settings from the device.</span>
 		</div>
 	</fieldset>
