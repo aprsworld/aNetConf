@@ -116,6 +116,7 @@ function loadNewData(){
 
 				/* hide client settings if mode is access point or disabled */
 				if ( undefined !== data.net.interface.wlan0.mode ) {
+					console.log('hide client settings if mode is access point or disabled');
 					if ( 'client' == data.net.interface.wlan0.mode ) {
 						$('#wlan0_mode_client').prop('checked',true);
 						formSectionDisable('wlan0_client_settings',false);
@@ -130,15 +131,23 @@ function loadNewData(){
 				
 				/* hide IP settings if configuration is DHCP */
 				if ( undefined !== data.net.interface.wlan0.configuration ) {
+					console.log('hide IP settings if configuration is DHCP');
 					if ( 'static' == data.net.interface.wlan0.configuration ) {
 						console.log('here static');
 						$('#wlan0_configuration_static').prop('checked',true);
-						formSectionDisable('wlan0_static',true);
+						formSectionDisable('wlan0_static',false);
 					} else if ( 'dhcp' == data.net.interface.wlan0.configuration ) {
 						console.log('here dhcp');
 						$('#wlan0_configuration_dhcp').prop('checked',true);
-						formSectionDisable('wlan0_static',false);
+						formSectionDisable('wlan0_static',true);
 					}
+				}
+
+				if ( undefined !== data.net.interface.wlan0.ssid ) {
+					fillFormTextField('networkConfiguration','wlan0_manual_ssid',data.net.interface.wlan0.ssid);
+				}
+				if ( undefined !== data.net.interface.wlan0.psk ) {
+					fillFormTextField('networkConfiguration','wlan0_manual_psk',data.net.interface.wlan0.psk);
 				}
 
 				fillFormTextField('networkConfiguration','wlan0_ip',data.net.interface.wlan0.ip);
@@ -170,6 +179,11 @@ function loadScanData(){
 				var rowCode='<tr>';
 				rowCode += '<td><input type="radio" name="wlan0_ssid" value="' + data[i].ssid + '" /></td>';
 				rowCode += '<td>' + data[i].ssid + '</td>';
+				if ( data[i].security.includes("PSK") ) {
+					rowCode += '<td><input name="wlan0_manual_psk[' + data[i].ssid + ']" id="wlan0_manual_psk[' + data[i].ssid + ']" type="text" placeholder="PSK" disabled /></td>';
+				} else {
+					rowCode += '<td></td>';
+				}
 				rowCode += '<td>' + data[i].signal + ' dBm</td>';
 				rowCode += '<td>' + data[i].security + '</td>';
 				rowCode += '<td>' + data[i].nAccessPoints + '</td>';
@@ -183,12 +197,19 @@ function loadScanData(){
 				if ( 'wlan0_manual_ssid' == this.value ) {
 //					console.log('# undisabling text input box');
 					$('#wlan0_manual_ssid').prop('disabled',false);
+					$('#wlan0_manual_psk').prop('disabled',false);
 //					$('#networkConfiguration').formValidation('enableFieldValidators','wlan0_manual_ssid',true,'callback');
 				} else {
-//					console.log('# disabling text input box');
+//					console.log('# disabling manual text input box');
 					$('#wlan0_manual_ssid').prop('disabled',true);
+					$('#wlan0_manual_psk').prop('disabled',true);
 //					$('#networkConfiguration').formValidation('enableFieldValidators','wlan0_manual_ssid',false,'callback');
 //					$('#networkConfiguration').formValidation('disableSubmitButtons','false');
+
+					/* enable the PSK input box next to selected value */
+					$('#wlan0_psk[' + this.value + ']').prop('disabled',false);
+					console.log('enabling #wlan0_psk[' + this.value + ']');
+
 				}
 
 				console.log('# wlan0_ssid this.value=' + this.value);
@@ -448,7 +469,7 @@ Wireless Access Point mode allows wireless devices to connect to this device. Cl
 			<div class="pure-control-group">
 				<hr />
 
-				<label for="wlan0_ssid">Wireless SSID</label>
+				<label for="wlan0_ssid">Wireless Network</label>
 
 				<span class="pure-form-message-inline">
 					<div id="scan_happening" style="text-align: center; padding: 10px; margin-right: auto; margin-left: auto; background-color: orange; color: white; display: none; ">
@@ -456,12 +477,13 @@ Wireless Access Point mode allows wireless devices to connect to this device. Cl
 						Currently scanning for available wireless networks. Please wait.
 					</div>
 		
-					<div id="scan_results" style="display: none;">
+					<div id="scan_results">
 						<table id="scan_results_table" class="pure-table pure-table-horizontal pure-table-striped">
 							<thead>
 								<tr>
 									<th>Use?</th>
 									<th>SSID</th>
+									<th>PSK</th>
 									<th>Signal Strength</th>
 									<th>Security</th>
 									<th># of AP</th>
@@ -471,6 +493,7 @@ Wireless Access Point mode allows wireless devices to connect to this device. Cl
 								<tr>
 									<td><input type="radio" name="wlan0_ssid" value="wlan0_manual_ssid" id="radio_wlan0_manual_ssid" /></td>
 									<td><input name="wlan0_manual_ssid" type="text" id="wlan0_manual_ssid" placeholder="SSID (manual entry)" disabled /></td>
+									<td><input name="wlan0_manual_psk" type="text" id="wlan0_manual_psk" placeholder="PSK (manual entry)" disabled /></td>
 									<td></td>
 									<td></td>
 									<td></td>
