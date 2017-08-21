@@ -83,8 +83,8 @@ function loadNewData(){
 		function(data) {
 			hideWarn();
 			
-			console.log('# received the following data:');
-			console.log(data);
+//			console.log('# received the following data:');
+//			console.log(data);
 
 			/* eth0 interface */
 			if ( data.net.interface.eth0 !== undefined ) {
@@ -118,7 +118,6 @@ function loadNewData(){
 
 				/* hide client settings if mode is access point or disabled */
 				if ( undefined !== data.net.interface.wlan0.mode ) {
-					console.log('hide client settings if mode is access point or disabled');
 					if ( 'client' == data.net.interface.wlan0.mode ) {
 						$('#wlan0_mode_client').prop('checked',true);
 						formSectionDisable('wlan0_client_settings',false);
@@ -133,13 +132,10 @@ function loadNewData(){
 				
 				/* hide IP settings if configuration is DHCP */
 				if ( undefined !== data.net.interface.wlan0.configuration ) {
-					console.log('hide IP settings if configuration is DHCP');
 					if ( 'static' == data.net.interface.wlan0.configuration ) {
-						console.log('here static');
 						$('#wlan0_configuration_static').prop('checked',true);
 						formSectionDisable('wlan0_static',false);
 					} else if ( 'dhcp' == data.net.interface.wlan0.configuration ) {
-						console.log('here dhcp');
 						$('#wlan0_configuration_dhcp').prop('checked',true);
 						formSectionDisable('wlan0_static',true);
 					}
@@ -175,14 +171,15 @@ function loadScanData(){
 			$("#scan_happening").hide();
 			$("#scan_results").show();
 
-			console.log('# loadScanData() received the following data:');
-			console.log(data);
+//			console.log('# loadScanData() received the following data:');
+//			console.log(data);
 
 			var tbody = $('#scan_results_table').children('tbody');
 
 			/* remove change event handler */
 			$('input[type=radio][name=wlan0_ssid]').unbind();
 
+			/* add results to table */
 			for ( var i=0 ; i<data.length ; i++ ) {
 				var rowCode='<tr>';
 				rowCode += '<td><input type="radio" name="wlan0_ssid" value="' + data[i].ssid + '" /></td>';
@@ -198,7 +195,7 @@ function loadScanData(){
 
 			/* go here whenever selected SSID changes */
 			$('input[type=radio][name=wlan0_ssid]').change(function() { 
-				console.log('# wlan0_ssid changed to this.value=' + this.value);
+//				console.log('# wlan0_ssid changed to this.value=' + this.value);
 
 				/* our containing row */
 				var tr = $(this).closest('tr');
@@ -361,7 +358,7 @@ $(document).ready(function(){
 
 	/* clear form and reload initial values from system */
 	$('.button-revert').click( function() {
-		console.log("# button-revert clicked");
+//		console.log("# button-revert clicked");
 
 		/* clear text fields */
 		$(this).closest('form').find("input[type=text]").val("")
@@ -371,7 +368,14 @@ $(document).ready(function(){
 
 	/* scan button */
 	$('.button-scan').click( function() {
-		console.log("# button-scan clicked");
+//		console.log("# button-scan clicked");
+
+		/* put wlan0_psk input back in the manual row of the table (in case it has moved) */
+		$('#wlan0_psk').prop('disabled',false);
+		$("#wlan0_psk").appendTo( $("#wlan0_psk_manual") );
+		/* check radio_wlan0_manual_ssid */  
+		$('#radio_wlan0_manual_ssid').prop('checked',true);
+		$('#wlan0_manual_ssid').prop('disabled',false);
 
 		/* empty the table besides the first row */
 		$("#scan_results_table").children('tbody').find("tr:gt(0)").remove();
@@ -392,7 +396,7 @@ function formSectionNetworkMode(section,value) {
 }
 
 function formSectionDisable(section,value) {
-	console.log('formSectionDisable(' + section + ',' + value + ')');
+//	console.log('formSectionDisable(' + section + ',' + value + ')');
 
 	if ( value ) {
 		$('#' + section + ' input').prop('disabled',true);
