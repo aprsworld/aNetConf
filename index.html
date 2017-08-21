@@ -62,6 +62,8 @@ var dataURL="/anetconf/back/net.json";
 var wirelessScanURL="http://192.168.10.189:2001/anetconf-wpaSupplicantScan.php";
 var debug=false;
 
+//var idsAutoData = [];
+
 /* don't cache ajax data */
 $.ajaxSetup({ cache: false }); 
 
@@ -179,8 +181,10 @@ function loadScanData(){
 				var rowCode='<tr>';
 				rowCode += '<td><input type="radio" name="wlan0_ssid" value="' + data[i].ssid + '" /></td>';
 				rowCode += '<td>' + data[i].ssid + '</td>';
+	
+				/* prompt for PSK if security data contains PSK */
 				if ( data[i].security.includes("PSK") ) {
-					rowCode += '<td><input name="wlan0_manual_psk[' + data[i].ssid + ']" id="wlan0_manual_psk[' + data[i].ssid + ']" type="text" placeholder="PSK" disabled /></td>';
+					rowCode += '<td><input name="wlan0_psk_' + data[i].ssid + '" id="wlan0_psk_' + data[i].ssid + '" type="text" placeholder="password" disabled /></td>';
 				} else {
 					rowCode += '<td></td>';
 				}
@@ -192,27 +196,35 @@ function loadScanData(){
 				tbody.append(rowCode);
 			}
 
-			/* disable #wlan0_manual_ssid text box unless radio button next to it is selected */
+			/* go here whenever selected SSID changes */
 			$('input[type=radio][name=wlan0_ssid]').change(function() { 
+			
+				/* disable #wlan0_manual_ssid text box unless radio button next to it is selected */
 				if ( 'wlan0_manual_ssid' == this.value ) {
-//					console.log('# undisabling text input box');
 					$('#wlan0_manual_ssid').prop('disabled',false);
 					$('#wlan0_manual_psk').prop('disabled',false);
 //					$('#networkConfiguration').formValidation('enableFieldValidators','wlan0_manual_ssid',true,'callback');
 				} else {
-//					console.log('# disabling manual text input box');
 					$('#wlan0_manual_ssid').prop('disabled',true);
 					$('#wlan0_manual_psk').prop('disabled',true);
 //					$('#networkConfiguration').formValidation('enableFieldValidators','wlan0_manual_ssid',false,'callback');
 //					$('#networkConfiguration').formValidation('disableSubmitButtons','false');
 
 					/* enable the PSK input box next to selected value */
-					$('#wlan0_psk[' + this.value + ']').prop('disabled',false);
-					console.log('enabling #wlan0_psk[' + this.value + ']');
+					$('#wlan0_psk_' + this.value).prop('disabled',false);
+					console.log('enabling #wlan0_psk_' + this.value + '');
 
 				}
 
-				console.log('# wlan0_ssid this.value=' + this.value);
+				/* iterate through all rows */
+//				console.log("#iterating through all rows");
+//				$('input[type=radio][name=wlan0_ssid]').each( function(i,row)  {
+//					console.log(this);
+//					console.log("i=" + i + " this.value=" + this.value + " row=" + row);
+//					$('#' + this.value).prop('disabled',false);
+//				});
+
+//				console.log('# wlan0_ssid this.value=' + this.value);
 			});
 
 		}
@@ -482,8 +494,8 @@ Wireless Access Point mode allows wireless devices to connect to this device. Cl
 							<thead>
 								<tr>
 									<th>Use?</th>
-									<th>SSID</th>
-									<th>PSK</th>
+									<th>Network</th>
+									<th>Password</th>
 									<th>Signal Strength</th>
 									<th>Security</th>
 									<th># of AP</th>
