@@ -87,16 +87,15 @@ function loadNewData(){
 			/* eth0 interface */
 			if ( data.net.interface.eth0 !== undefined ) {
 				/* set the mode radio buttons initially to disabled, then change to appropriate if we have it*/
-				$('#eth0_mode_static').prop('checked',false);
-				$('#eth0_mode_dhcp').prop('checked',false);
-				$('#eth0_mode_disabled').prop('checked',true);
+				$('#eth0_configuration_static').prop('checked',false);
+				$('#eth0_configuration_dhcp').prop('checked',true);
 				formSectionNetworkMode('eth0_static','disabled');
-				if ( undefined !== data.net.interface.eth0.mode ) {
-					if ( 'static' == data.net.interface.eth0.mode ) {
-						$('#eth0_mode_static').prop('checked',true);
+				if ( undefined !== data.net.interface.eth0.configuration ) {
+					if ( 'static' == data.net.interface.eth0.configuration ) {
+						$('#eth0_configuration_static').prop('checked',true);
 						formSectionNetworkMode('eth0_static',true);
-					} else if ( 'dhcp' == data.net.interface.eth0.mode ) {
-						$('#eth0_mode_dhcp').prop('checked',true);
+					} else if ( 'dhcp' == data.net.interface.eth0.configuration ) {
+						$('#eth0_configuration_dhcp').prop('checked',true);
 					}
 				}
 
@@ -108,6 +107,46 @@ function loadNewData(){
 			}
 
 			/* wlan0 interface */
+			if ( data.net.interface.wlan0 !== undefined ) {
+				/* set the mode radio buttons initially to disabled, then change to appropriate if we have it*/
+				$('#wlan0_mode_ap').prop('checked',false);
+				$('#wlan0_mode_client').prop('checked',false);
+				$('#wlan0_mode_disabled').prop('checked',true);
+
+
+				/* hide client settings if mode is access point or disabled */
+				if ( undefined !== data.net.interface.wlan0.mode ) {
+					if ( 'client' == data.net.interface.wlan0.mode ) {
+						$('#wlan0_mode_client').prop('checked',true);
+						formSectionDisable('wlan0_client_settings',false);
+					} else if ( 'ap' == data.net.interface.wlan0.mode ) {
+						$('#wlan0_mode_ap').prop('checked',true);
+						formSectionDisable('wlan0_client_settings',true);
+					} else {
+						$('#wlan0_mode_disabled').prop('checked',true);
+						formSectionDisable('wlan0_client_settings',true);
+					}
+				}
+				
+				/* hide IP settings if configuration is DHCP */
+				if ( undefined !== data.net.interface.wlan0.configuration ) {
+					if ( 'static' == data.net.interface.wlan0.configuration ) {
+						console.log('here static');
+						$('#wlan0_configuration_static').prop('checked',true);
+						formSectionDisable('wlan0_static',true);
+					} else if ( 'dhcp' == data.net.interface.wlan0.configuration ) {
+						console.log('here dhcp');
+						$('#wlan0_configuration_dhcp').prop('checked',true);
+						formSectionDisable('wlan0_static',false);
+					}
+				}
+
+				fillFormTextField('networkConfiguration','wlan0_ip',data.net.interface.wlan0.ip);
+				fillFormTextField('networkConfiguration','wlan0_netmask',data.net.interface.wlan0.netmask);
+				fillFormTextField('networkConfiguration','wlan0_gateway',data.net.interface.wlan0.gateway);
+				fillFormTextField('networkConfiguration','wlan0_nameserver_primary',data.net.interface.wlan0.nameserver[0]);
+				fillFormTextField('networkConfiguration','wlan0_nameserver_secondary',data.net.interface.wlan0.nameserver[1]);
+			}
 
 		}
 	); 
@@ -261,93 +300,27 @@ $(document).ready(function(){
 						message: 'If secondary DNS server IP address is specified, it must be a valid IP address.'
 					}
 				}
-			},
-			/* wlan0 */
-			wlan0_ssid: {
-			//wlan0_manual_ssid: {
-				validators: {
-					callback: {
-						callback: function(value, validator, $field) {
-							console.log('# wlan0_manual_ssid callback value=' + value + ' validator=' + validator + ' field=' + $field + '');
-							
-							/* if 'wlan0_ssid_manual' != wlan0_ssid, then return true because we don't care if it is valid */
-							console.log('# ssid is ' + $('input[name=wlan0_ssid]:checked', '#networkConfiguration').val());
-
-							if ( 'wlan0_manual_ssid' !==  $('input[name=wlan0_ssid]:checked', '#networkConfiguration').val() ) {
-								return true;
-							}
-							
-							if ( value.length < 1 || value.length > 32 ) {
-								return {
-									valid: false,
-									message: 'SSID must be 1 to 32 characters'
-								}
-							}
-
-							
-							return true;
-						}
-					}
-				}
-			},
-			wlan0_ip: {
-				validators: {
-					notEmpty: {
-						message: 'IP address is required.'
-					},
-					ip: {
-						ipv4: true,
-						ipv6: false,
-						message: 'Valid IP address required'
-					}
-				}
-			},
-			wlan0_netmask: {
-				validators: {
-					notEmpty: {
-						message: 'Subnet mask is required.'
-					},
-					ip: {
-						ipv4: true,
-						ipv6: false,
-						message: 'Valid subnet mask required'
-					}
-				}
-			},
-			wlan0_gateway: {
-				validators: {
-					ip: {
-						ipv4: true,
-						ipv6: false,
-						message: 'If gateway IP address is specified, it must be a valid IP address.'
-					}
-				}
-			},
-			wlan0_nameserver_primary: {
-				validators: {
-					ip: {
-						ipv4: true,
-						ipv6: false,
-						message: 'If primary DNS server IP address is specified, it must be a valid IP address.'
-					}
-				}
-			},
-			wlan0_nameserver_secondary: {
-				validators: {
-					ip: {
-						ipv4: true,
-						ipv6: false,
-						message: 'If secondary DNS server IP address is specified, it must be a valid IP address.'
-					}
-				}
 			}
 		}
 	});
 
-	/* set initial form state */
-	formSectionNetworkMode('eth0_static',$('[name=eth0_mode]:checked').val());
+	/* hide static IP configuration sections if the interface configuration is disabled or DHCP */
+	/* set initial state */
+	formSectionNetworkMode('eth0_static',$('[name=eth0_configuration]:checked').val());
+	formSectionNetworkMode('wlan0_static',$('[name=wlan0_configuration]:checked').val());
+
 	/* any future changes */
-	$('input[type=radio][name=eth0_mode]').change(function() { formSectionNetworkMode('eth0_static',this.value); });
+	$('input[type=radio][name=eth0_configuration]').change(function() { formSectionNetworkMode('eth0_static',this.value); });
+	$('input[type=radio][name=wlan0_configuration]').change(function() { formSectionNetworkMode('wlan0_static',this.value); });
+
+	/* hide wireless SSID and configuration method section if wlan0 is an access point or disabled */
+	$('input[type=radio][name=wlan0_mode]').change(function() {
+		if ( 'client' == this.value ) {
+			formSectionDisable('wlan0_client_settings',false);
+		} else { 
+			formSectionDisable('wlan0_client_settings',true);
+		}
+ 	});
 
 
 	/* clear form and reload initial values from system */
@@ -383,10 +356,14 @@ function formSectionNetworkMode(section,value) {
 }
 
 function formSectionDisable(section,value) {
+	console.log('formSectionDisable(' + section + ',' + value + ')');
+
 	if ( value ) {
 		$('#' + section + ' input').prop('disabled',true);
+		$("#" + section).hide();
 	} else {
 		$('#' + section + ' input').prop('disabled',false);
+		$("#" + section).show();
 	}
 }
 
@@ -399,7 +376,7 @@ function formSectionDisable(section,value) {
 
 <!-- connection warning message -->
 <div id="connection_warn" style="text-align: center; width: 800px; padding: 10px; margin-right: auto; margin-left: auto; background-color: orange; color: white; display: none;" onclick="hideWarn()">
-	<h1>No Response From Server. Please check to make sure you are still connected to the Internet and have a valid data URL.</h1>
+	<h1>Error retreiving current network settings. Please check to make sure you are still connected to the network.</h1>
 </div>
 
 
@@ -407,16 +384,22 @@ function formSectionDisable(section,value) {
 	<fieldset>
 		<legend style="font-size: 2em; font-weight: bold;"><i class="fa fa-sitemap" aria-hidden="true"></i> Wired Ethernet</legend>
 
+		<!-- always leave ethernet device enabled as a client -->
+		<input type="hidden" name="eth0_mode" value="client" />
+
+
 		<div class="pure-control-group">
-			<label for="eth0_mode">Configuration Method</label>
-			<label for="eth0_mode_dhcp" class="pure-radio"><input id="eth0_mode_dhcp" type="radio" name="eth0_mode" value="dhcp" /> DHCP</label>
-			<label for="eth0_mode_static" class="pure-radio"><input id="eth0_mode_static" type="radio" name="eth0_mode" value="static" /> Static</label>
-			<label for="eth0_mode_disabled" class="pure-radio"><input id="eth0_mode_disabled" type="radio" name="eth0_mode" value="disabled" /> Disabled</label>
+			<label for="eth0_configuration">Configuration Method</label>
+			<label for="eth0_configuration_dhcp" class="pure-radio"><input id="eth0_configuration_dhcp" type="radio" name="eth0_configuration" value="dhcp" /> DHCP</label>
+			<label for="eth0_configuration_static" class="pure-radio"><input id="eth0_configuration_static" type="radio" name="eth0_configuration" value="static" /> Static</label>
 			<br />
-			<span class="pure-form-message-inline">Most networks provide a DHCP server which will automatically get your device on the network. If unsure, use DHCP for configuration method.</span>
+			<span class="pure-form-message-inline">Most networks provide a DHCP server which will automatically get your device on the network. If unsure, use "DHCP" for configuration method.</span>
 		</div>
 
+
 		<div id="eth0_static">
+			<hr />
+
 			<div class="pure-control-group">
 				<label for="eth0_ip">IP address</label>
 				<input name="eth0_ip" id="eth0_ip" type="text" />
@@ -435,109 +418,118 @@ function formSectionDisable(section,value) {
 			<div class="pure-control-group">
 				<label for="eth0_nameserver_primary">Primary DNS</label>
 				<input name="eth0_nameserver_primary" id="eth0_nameserver_primary" />
-				<span class="pure-form-message-inline">Consider using <a href="https://developers.google.com/speed/public-dns/">Google Public DNS</a> server <i>8.8.8.8</i>.</span>
+				<span class="pure-form-message-inline">Consider using <a href="https://developers.google.com/speed/public-dns/">Google Public DNS <i class="fa fa-external-link" aria-hidden="true"></i></a> server <i>8.8.8.8</i>.</span>
 			</div>
 
 			<div class="pure-control-group">
 				<label for="eth0_nameserver_secondary">Secondary DNS<span class="pure-form-message-inline">(optional)</span></label>
 				<input name="eth0_nameserver_secondary" id="eth0_nameserver_secondary" type="text" />
-				<span class="pure-form-message-inline">Consider using <a href="https://developers.google.com/speed/public-dns/">Google Public DNS</a> server <i>8.8.4.4</i>.</span>
+				<span class="pure-form-message-inline">Consider using <a href="https://developers.google.com/speed/public-dns/">Google Public DNS <i class="fa fa-external-link" aria-hidden="true"></i></a> server <i>8.8.4.4</i>.</span>
 			</div>
 		</div>
 	</fieldset>
+
 	<fieldset>
 		<legend style="font-size: 2em; font-weight: bold;"><i class="fa fa-wifi" aria-hidden="true"></i> Wireless Ethernet</legend>
 
 		<div class="pure-control-group">
 			<label for="wlan0_mode">Interface Mode</label>
 			<label for="wlan0_mode_ap" class="pure-radio"><input id="wlan0_mode_ap" type="radio" name="wlan0_mode" value="ap" /> Wireless Access Point for stand-alone network</label>
-			<label for="wlan0_mode_dhcp" class="pure-radio"><input id="wlan0_mode_dhcp" type="radio" name="wlan0_mode" value="client" /> Client for existing wireless network</label>
+			<label for="wlan0_mode_client" class="pure-radio"><input id="wlan0_mode_client" type="radio" name="wlan0_mode" value="client" /> Client for existing wireless network</label>
 			<label for="wlan0_mode_disabled" class="pure-radio"><input id="wlan0_mode_disabled" type="radio" name="wlan0_mode" value="disabled" /> Disabled</label>
 			<br />
 			<span class="pure-form-message-inline">
 Wireless Access Point mode allows wireless devices to connect to this device. Client mode is used to connect to an existing wireless network.</span>
 		</div>
 
-		<div class="pure-control-group">
-			<label for="wlan0_mode">Configuration Method</label>
-			<label for="wlan0_mode_dhcp" class="pure-radio"><input id="wlan0_mode_dhcp" type="radio" name="wlan0_mode" value="dhcp" /> DHCP</label>
-			<label for="wlan0_mode_static" class="pure-radio"><input id="wlan0_mode_static" type="radio" name="wlan0_mode" value="static" /> Static</label>
-			<br />
-			<span class="pure-form-message-inline">
-Wireless Access Point / Stand-alone mode allows wireless devices to connect to this device. DHCP and Static 
 
-Most networks provide a DHCP server which will automatically get your device on the network. If unsure, use DHCP for configuration method.</span>
-		</div>
+		<div id="wlan0_client_settings">
 
-		<div class="pure-control-group">
-			<label for="wlan0_ssid">Wireless SSID</label>
+			<div class="pure-control-group">
+				<hr />
 
-			<span class="pure-form-message-inline">
-				<div id="scan_happening" style="text-align: center; padding: 10px; margin-right: auto; margin-left: auto; background-color: orange; color: white; display: none; ">
-					<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>
-					Currently scanning for available wireless networks. Please wait.
-				</div>
-	
-				<div id="scan_results" style="display: none;">
-					<table id="scan_results_table" class="pure-table pure-table-horizontal pure-table-striped">
-						<thead>
-							<tr>
-								<th>Use?</th>
-								<th>SSID</th>
-								<th>Signal Strength</th>
-								<th>Security</th>
-								<th># of AP</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><input type="radio" name="wlan0_ssid" value="wlan0_manual_ssid" id="radio_wlan0_manual_ssid" /></td>
-								<td><input name="wlan0_manual_ssid" type="text" id="wlan0_manual_ssid" placeholder="SSID (manual entry)" disabled /></td>
-								<td></td>
-								<td></td>
-								<td></td>
-							</tr>
-						<!-- will insert data automatically here -->
-						</tbody>
-					</table>
+				<label for="wlan0_ssid">Wireless SSID</label>
+
+				<span class="pure-form-message-inline">
+					<div id="scan_happening" style="text-align: center; padding: 10px; margin-right: auto; margin-left: auto; background-color: orange; color: white; display: none; ">
+						<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>
+						Currently scanning for available wireless networks. Please wait.
+					</div>
+		
+					<div id="scan_results" style="display: none;">
+						<table id="scan_results_table" class="pure-table pure-table-horizontal pure-table-striped">
+							<thead>
+								<tr>
+									<th>Use?</th>
+									<th>SSID</th>
+									<th>Signal Strength</th>
+									<th>Security</th>
+									<th># of AP</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><input type="radio" name="wlan0_ssid" value="wlan0_manual_ssid" id="radio_wlan0_manual_ssid" /></td>
+									<td><input name="wlan0_manual_ssid" type="text" id="wlan0_manual_ssid" placeholder="SSID (manual entry)" disabled /></td>
+									<td></td>
+									<td></td>
+									<td></td>
+								</tr>
+							<!-- will insert data automatically here -->
+							</tbody>
+						</table>
+					</div>
+			
+					<button type="button" class="pure-button pure-button-primary button-scan">Scan for Available Wireless Networks</button>
+				</span>
+			</div>
+
+			<div class="pure-control-group">
+				<hr />
+
+				<label for="wlan0_configuration">Configuration Method</label>
+				<label for="wlan0_configuration_dhcp" class="pure-radio"><input id="wlan0_configuration_dhcp" type="radio" name="wlan0_configuration" value="dhcp" /> DHCP</label>
+				<label for="wlan0_configuration_static" class="pure-radio"><input id="wlan0_configuration_static" type="radio" name="wlan0_configuration" value="static" /> Static</label>
+				<br />
+				<span class="pure-form-message-inline"> Most networks provide a DHCP server which will automatically get your device on the network. If unsure, use "DHCP" for configuration method.</span>
+			</div>
+
+
+			<div id="wlan0_static">
+				<hr />
+
+				<div class="pure-control-group">
+					<label for="wlan0_ip">IP address</label>
+					<input name="wlan0_ip" id="wlan0_ip" type="text" />
 				</div>
 		
-				<button type="button" class="pure-button pure-button-primary button-scan">Scan for Available Wireless Networks</button>
-			</span>
-		</div>
+				<div class="pure-control-group">
+					<label for="wlan0_netmask">Subnet Mask</label>
+					<input name="wlan0_netmask" id="wlan0_netmask" type="text" />
+				</div>
 
-		<div id="wlan0_static">
-			<div class="pure-control-group">
-				<label for="wlan0_ip">IP address</label>
-				<input name="wlan0_ip" id="wlan0_ip" type="text" />
-			</div>
-	
-			<div class="pure-control-group">
-				<label for="wlan0_netmask">Subnet Mask</label>
-				<input name="wlan0_netmask" id="wlan0_netmask" type="text" />
-			</div>
+				<div class="pure-control-group">
+					<label for="wlan0_gateway">Gateway</label>
+					<input name="wlan0_gateway" id="wlan0_gateway" type="text" />
+				</div>
 
-			<div class="pure-control-group">
-				<label for="wlan0_gateway">Gateway</label>
-				<input name="wlan0_gateway" id="wlan0_gateway" type="text" />
-			</div>
+				<div class="pure-control-group">
+					<label for="wlan0_nameserver_primary">Primary DNS</label>
+					<input name="wlan0_nameserver_primary" id="wlan0_nameserver_primary" />
+					<span class="pure-form-message-inline">Consider using <a href="https://developers.google.com/speed/public-dns/">Google Public DNS</a> server <i>8.8.8.8</i>.</span>
+				</div>
 
-			<div class="pure-control-group">
-				<label for="wlan0_nameserver_primary">Primary DNS</label>
-				<input name="wlan0_nameserver_primary" id="wlan0_nameserver_primary" />
-				<span class="pure-form-message-inline">Consider using <a href="https://developers.google.com/speed/public-dns/">Google Public DNS</a> server <i>8.8.8.8</i>.</span>
-			</div>
-
-			<div class="pure-control-group">
-				<label for="wlan0_nameserver_secondary">Secondary DNS<span class="pure-form-message-inline">(optional)</span></label>
-				<input name="wlan0_nameserver_secondary" id="wlan0_nameserver_secondary" type="text" />
-				<span class="pure-form-message-inline">Consider using <a href="https://developers.google.com/speed/public-dns/">Google Public DNS</a> server <i>8.8.4.4</i>.</span>
+				<div class="pure-control-group">
+					<label for="wlan0_nameserver_secondary">Secondary DNS<span class="pure-form-message-inline">(optional)</span></label>
+					<input name="wlan0_nameserver_secondary" id="wlan0_nameserver_secondary" type="text" />
+					<span class="pure-form-message-inline">Consider using <a href="https://developers.google.com/speed/public-dns/">Google Public DNS</a> server <i>8.8.4.4</i>.</span>
+				</div>
 			</div>
 		</div>
 	</fieldset>
 
 	<fieldset>
-		<legend style="font-size: 2em; font-weight: bold;">Actions</legend>
+		<legend style="font-size: 2em; font-weight: bold;"><i class="fa fa-upload" aria-hidden="true"></i> Actions</legend>
 		<div class="pure-controls">
 			<button type="submit" class="pure-button pure-button-primary"><i class="fa fa-floppy-o" aria-hidden="true"></i>  Save Changes and Reboot</button>
 			<span class="pure-form-message-inline">Click the "Save Changes and Reboot" button to apply your changes.</span>
