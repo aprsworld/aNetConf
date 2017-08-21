@@ -85,6 +85,7 @@ function loadNewData(){
 			
 //			console.log('# received the following data:');
 //			console.log(data);
+//			console.log(JSON.stringify(data));
 
 			/* eth0 interface */
 			if ( data.net.interface.eth0 !== undefined ) {
@@ -106,6 +107,9 @@ function loadNewData(){
 				fillFormTextField('networkConfiguration','eth0_gateway',data.net.interface.eth0.gateway);
 				fillFormTextField('networkConfiguration','eth0_nameserver_primary',data.net.interface.eth0.nameserver[0]);
 				fillFormTextField('networkConfiguration','eth0_nameserver_secondary',data.net.interface.eth0.nameserver[1]);
+
+				/* revalidate interface mode and configuration method */
+			      	$('#networkConfiguration').formValidation('revalidateField','eth0_configuration');
 			}
 
 			/* wlan0 interface */
@@ -159,9 +163,13 @@ function loadNewData(){
 				fillFormTextField('networkConfiguration','wlan0_gateway',data.net.interface.wlan0.gateway);
 				fillFormTextField('networkConfiguration','wlan0_nameserver_primary',data.net.interface.wlan0.nameserver[0]);
 				fillFormTextField('networkConfiguration','wlan0_nameserver_secondary',data.net.interface.wlan0.nameserver[1]);
-			}
 
+				/* revalidate interface mode and configuration method */
+			      	$('#networkConfiguration').formValidation('revalidateField','wlan0_mode');
+			      	$('#networkConfiguration').formValidation('revalidateField','wlan0_configuration');
+			}
 		}
+		
 	); 
 }
 
@@ -283,6 +291,14 @@ $(document).ready(function(){
 		},
 
 		fields: {
+			/* eth0 */
+			eth0_configuration: {
+				validators: {
+					notEmpty: {
+						message: 'Address configuration method must be selected.'
+					}
+				}
+			},
 			eth0_ip: {
 				validators: {
 					notEmpty: {
@@ -326,6 +342,72 @@ $(document).ready(function(){
 				}
 			},
 			eth0_nameserver_secondary: {
+				validators: {
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'If secondary DNS server IP address is specified, it must be a valid IP address.'
+					}
+				}
+			},
+			/* wlan0 */
+			wlan0_mode: {
+				validators: {
+					notEmpty: {
+						message: 'Device mode must be selected.'
+					}
+				}
+			},
+			wlan0_configuration: {
+				validators: {
+					notEmpty: {
+						message: 'Address configuration method must be selected.'
+					}
+				}
+			},
+			wlan0_ip: {
+				validators: {
+					notEmpty: {
+						message: 'IP address is required.'
+					},
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'Valid IP address required'
+					}
+				}
+			},
+			wlan0_netmask: {
+				validators: {
+					notEmpty: {
+						message: 'Subnet mask is required.'
+					},
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'Valid subnet mask required'
+					}
+				}
+			},
+			wlan0_gateway: {
+				validators: {
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'If gateway IP address is specified, it must be a valid IP address.'
+					}
+				}
+			},
+			wlan0_nameserver_primary: {
+				validators: {
+					ip: {
+						ipv4: true,
+						ipv6: false,
+						message: 'If primary DNS server IP address is specified, it must be a valid IP address.'
+					}
+				}
+			},
+			wlan0_nameserver_secondary: {
 				validators: {
 					ip: {
 						ipv4: true,
