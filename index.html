@@ -149,7 +149,7 @@ function loadNewData(){
 					fillFormTextField('networkConfiguration','wlan0_manual_ssid',data.net.interface.wlan0.ssid);
 				}
 				if ( undefined !== data.net.interface.wlan0.psk ) {
-					fillFormTextField('networkConfiguration','wlan0_manual_psk',data.net.interface.wlan0.psk);
+					fillFormTextField('networkConfiguration','wlan0_psk',data.net.interface.wlan0.psk);
 				}
 
 				fillFormTextField('networkConfiguration','wlan0_ip',data.net.interface.wlan0.ip);
@@ -183,11 +183,11 @@ function loadScanData(){
 				rowCode += '<td>' + data[i].ssid + '</td>';
 	
 				/* prompt for PSK if security data contains PSK */
-				if ( data[i].security.includes("PSK") ) {
-					rowCode += '<td><input name="wlan0_psk_' + data[i].ssid + '" id="wlan0_psk_' + data[i].ssid + '" type="text" placeholder="password" disabled /></td>';
-				} else {
+//				if ( data[i].security.includes("PSK") ) {
+//					rowCode += '<td><input name="wlan0_psk_' + data[i].ssid + '" id="wlan0_psk_' + data[i].ssid + '" type="text" placeholder="password" disabled /></td>';
+//				} else {
 					rowCode += '<td></td>';
-				}
+//				}
 				rowCode += '<td>' + data[i].signal + ' dBm</td>';
 				rowCode += '<td>' + data[i].security + '</td>';
 				rowCode += '<td>' + data[i].nAccessPoints + '</td>';
@@ -198,33 +198,38 @@ function loadScanData(){
 
 			/* go here whenever selected SSID changes */
 			$('input[type=radio][name=wlan0_ssid]').change(function() { 
+				console.log('# wlan0_ssid changed to this.value=' + this.value);
+
+				/* our containing row */
+				var tr = $(this).closest('tr');
+				/* td that we can put our password box */
+				var tdPassword = tr.children().eq(2);
+				/* td that has the scanned security */
+				var tdSecurity = tr.children().eq(4);
+
+				/* disable psk input field if PSK doesn't appear in security TD */
+				if ( tdSecurity.text().includes("PSK") ) {
+					$('#wlan0_psk').prop('disabled',false);
+				} else {
+					$('#wlan0_psk').prop('disabled',true);
+				}
+
+				/* move wlan0_psk input element to our current rows td */
+				$("#wlan0_psk").appendTo(tdPassword);
+			
+
 			
 				/* disable #wlan0_manual_ssid text box unless radio button next to it is selected */
 				if ( 'wlan0_manual_ssid' == this.value ) {
 					$('#wlan0_manual_ssid').prop('disabled',false);
-					$('#wlan0_manual_psk').prop('disabled',false);
 //					$('#networkConfiguration').formValidation('enableFieldValidators','wlan0_manual_ssid',true,'callback');
 				} else {
 					$('#wlan0_manual_ssid').prop('disabled',true);
-					$('#wlan0_manual_psk').prop('disabled',true);
 //					$('#networkConfiguration').formValidation('enableFieldValidators','wlan0_manual_ssid',false,'callback');
 //					$('#networkConfiguration').formValidation('disableSubmitButtons','false');
 
-					/* enable the PSK input box next to selected value */
-					$('#wlan0_psk_' + this.value).prop('disabled',false);
-					console.log('enabling #wlan0_psk_' + this.value + '');
-
 				}
 
-				/* iterate through all rows */
-//				console.log("#iterating through all rows");
-//				$('input[type=radio][name=wlan0_ssid]').each( function(i,row)  {
-//					console.log(this);
-//					console.log("i=" + i + " this.value=" + this.value + " row=" + row);
-//					$('#' + this.value).prop('disabled',false);
-//				});
-
-//				console.log('# wlan0_ssid this.value=' + this.value);
 			});
 
 		}
@@ -413,7 +418,7 @@ function formSectionDisable(section,value) {
 </div>
 
 
-<form class="pure-form pure-form-aligned" id="networkConfiguration" method="post" action="/anetconf/">
+<form class="pure-form pure-form-aligned" id="networkConfiguration" method="post" action="back/save.php">
 	<fieldset>
 		<legend style="font-size: 2em; font-weight: bold;"><i class="fa fa-sitemap" aria-hidden="true"></i> Wired Ethernet</legend>
 
@@ -503,9 +508,9 @@ Wireless Access Point mode allows wireless devices to connect to this device. Cl
 							</thead>
 							<tbody>
 								<tr>
-									<td><input type="radio" name="wlan0_ssid" value="wlan0_manual_ssid" id="radio_wlan0_manual_ssid" /></td>
+									<td><input type="radio" name="wlan0_ssid" value="wlan0_manual_ssid" id="radio_wlan0_manual_ssid" checked /></td>
 									<td><input name="wlan0_manual_ssid" type="text" id="wlan0_manual_ssid" placeholder="SSID (manual entry)" disabled /></td>
-									<td><input name="wlan0_manual_psk" type="text" id="wlan0_manual_psk" placeholder="PSK (manual entry)" disabled /></td>
+									<td><input name="wlan0_psk" type="text" id="wlan0_psk" placeholder="PSK (manual entry)" disabled /></td>
 									<td></td>
 									<td></td>
 									<td></td>
