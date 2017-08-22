@@ -58,8 +58,9 @@ button {
 	<body>
 
 <script type="text/JavaScript">
-var dataURL="/anetconf/back/net.json";
-var wirelessScanURL="http://192.168.10.189:2001/anetconf-wpaSupplicantScan.php";
+var dataURL="back/netJSON.php";
+//var wirelessScanURL="http://192.168.10.189:2001/anetconf-wpaSupplicantScan.php";
+var wirelessScanURL="http://192.168.10.189:2001/anetconf-iwlistScan.php";
 var debug=false;
 
 //var idsAutoData = [];
@@ -502,7 +503,7 @@ function formSectionDisable(section,value) {
 </div>
 
 
-<form class="pure-form pure-form-aligned" id="networkConfiguration" method="post" action="back/save.php">
+<form class="pure-form pure-form-aligned" id="networkConfiguration" method="post" action="back/netJSON.php">
 	<fieldset>
 		<legend style="font-size: 2em; font-weight: bold;"><i class="fa fa-sitemap" aria-hidden="true"></i> Wired Ethernet</legend>
 
@@ -655,6 +656,7 @@ Wireless Access Point mode allows wireless devices to connect to this device. Cl
 	<fieldset>
 		<legend style="font-size: 2em; font-weight: bold;"><i class="fa fa-upload" aria-hidden="true"></i> Actions</legend>
 		<div class="pure-controls">
+			<input type="hidden" name="action" value="save_reboot" />
 			<button type="submit" class="pure-button pure-button-primary"><i class="fa fa-floppy-o" aria-hidden="true"></i>  Save Changes and Reboot</button>
 			<span class="pure-form-message-inline">Click the "Save Changes and Reboot" button to apply your changes.</span>
 		</div>
