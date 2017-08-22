@@ -1,4 +1,5 @@
 <?php
+/* Scan for wireless networks using "iwlist scaan" which can be done while in access point mode */
 
 function iwlistScan_parse($s) {
 	$lines = explode("\n",$s);
@@ -8,9 +9,6 @@ function iwlistScan_parse($s) {
 
 	for ( $i=1 ; $i<count($lines) ; $i++ ) {
 		$line=trim($lines[$i]);
-
-//		echo $line . "\n";
-
 
 		$sepPos=strpos($line,":");
 
@@ -24,12 +22,11 @@ function iwlistScan_parse($s) {
 			if ( FALSE !== $signalPos ) {
 				$signalString=substr($line,$signalPos);
 
-//				printf("# signalString='%s'\n",$signalString);
 
+				/* get first number after signal */
 				$var = array_filter(preg_split("/\D+/", $signalString));
 				$signalLevel=reset($var);
 
-//				printf("# signalLevel='%s'\n",$signalLevel);
 
 				if ( $signalLevel <= 0 ) {
 					/* negative value is probably dBm */
@@ -45,20 +42,22 @@ function iwlistScan_parse($s) {
 			continue;
 		}
 
+		/* ':' separated, so we can make key value pairs */
 		$key=trim(substr($line,0,$sepPos));
 		$value=trim(substr($line,$sepPos+1));
 
 //		printf("key='%s' value='%s'\n",$key,$value);
 
 		if ( FALSE !== strpos($line,"- Address:" ) ) {
+			/* found a new network */
 			if ( '' != $ourAddress ) {
+				/* save our security details from last network */
 				$cells[$ourAddress]['security']=implode("-",$security);
 			}
 
 			$ourAddress=$value;
 
-//			printf("#########################################################################\n");
-//			printf("# detected start of new block. Address='%s'\n",$ourAddress);
+			/* start with blank security details for this network */
 			$security=array();
 		} else if ( 'ESSID' == $key ) {
 			$cells[$ourAddress]['ssid']=str_replace('"', '', $value);
@@ -75,8 +74,6 @@ function iwlistScan_parse($s) {
 				if ( FALSE === in_array('CCMP',$security) )
 					$security[]='CCMP';
 		}
-
-//		echo "--------------------------------------\n";
 	}
 
 	/* save gatered security from last cell */
@@ -131,7 +128,6 @@ $aps = iwlistScan_parse($iwlistOutput);
 /* merge down to networks */
 $networks = ap_merge($aps);
 
+/* print as JSON */
 echo json_encode($networks);
-//echo json_encode(wpaSupplicantScan_parse(shell_exec('sudo wpaSupplicantScan 2> /dev/null')));
-
 ?>
