@@ -1,6 +1,38 @@
 <?php
 /* Scan for wireless networks using "iwlist scaan" which can be done while in access point mode */
 
+
+
+function str_extractFirstOptionallySignedInt($s) {
+	$result="";
+	$triggered=false;
+
+	for ( $i=0 ; $i<strlen($s) ; $i++ ) {
+		$c=substr($s,$i,1);
+
+		if ( ! $triggered && ctype_digit($c) && 0==strlen($result) ) { 
+			$triggered=true;
+			if ( $i > 0 && '-' == substr($s,$i-1,1) ) {
+				$result='-';
+			}
+			$result .= $c;
+		} else {
+			if ( $triggered ) {
+				if ( ctype_digit($c) || '.' == $c ) {
+					$result .= $c;
+				} else {
+					return $result;
+				}
+			}
+		}
+
+
+	}
+
+	return $result;
+
+}
+
 function iwlistScan_parse($s) {
 	$lines = explode("\n",$s);
 
@@ -23,9 +55,10 @@ function iwlistScan_parse($s) {
 				$signalString=substr($line,$signalPos);
 
 
-				/* get first number after signal */
-				$var = array_filter(preg_split("/\D+/", $signalString));
-				$signalLevel=reset($var);
+				/* get first (optionally signed with negative) number after signal */
+				$signalLevel = str_extractFirstOptionallySignedInt($signalString);
+			
+//				printf("#### signalString='%s' signalLevel='%s' ####\n",$signalString,$signalLevel);
 
 
 				if ( $signalLevel <= 0 ) {
