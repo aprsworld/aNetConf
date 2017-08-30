@@ -1,5 +1,9 @@
 <?php
-/* Scan for wireless networks using "iwlist scaan" which can be done while in access point mode */
+/* 
+Scan for wireless networks using "iwlist scan" which can be done while in access point mode 
+
+This will require the webserver user (eg "www-data") sudo permissions for /sbin/iwlist
+*/
 
 
 
@@ -151,9 +155,9 @@ header("Access-Control-Allow-Origin: " . $origin);
 header('Content-type: text/plain');
 
 /* seems to need to run multiple times before it actually finishes the scan. */
-shell_exec("sudo iwlist wlan0 scan");
-shell_exec("sudo iwlist wlan0 scan");
-$iwlistOutput = shell_exec("sudo iwlist wlan0 scan");
+shell_exec("sudo /sbin/iwlist wlan0 scan");
+shell_exec("sudo /sbin/iwlist wlan0 scan");
+$iwlistOutput = shell_exec("sudo /sbin/iwlist wlan0 scan");
 
 /* get individual access points */
 $aps = iwlistScan_parse($iwlistOutput);
